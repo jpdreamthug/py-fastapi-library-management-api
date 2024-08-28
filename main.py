@@ -44,7 +44,7 @@ def read_authors(
         skip: int = 0,
         limit: int = 10,
         db: Session = Depends(get_db),
-):
+) -> list[Author]:
     return get_all_authors(db=db, skip=skip, limit=limit)
 
 
@@ -52,7 +52,7 @@ def read_authors(
 def create_new_author(
         author: AuthorCreate,
         db: Session = Depends(get_db)
-):
+) -> Author:
     db_author = get_author_by_name(db=db, name=author.name)
 
     if db_author:
@@ -65,7 +65,10 @@ def create_new_author(
 
 
 @app.get("/authors/{author_id}", response_model=Author)
-def read_single_author(author_id: int, db: Session = Depends(get_db)):
+def read_single_author(
+        author_id: int,
+        db: Session = Depends(get_db)
+) -> Author:
     db_author = get_author(db=db, author_id=author_id)
 
     if db_author is None:
@@ -80,7 +83,7 @@ def read_books(
         db: Session = Depends(get_db),
         skip: int = 0,
         limit: int = 10,
-):
+) -> list[Book]:
     return get_all_books(db=db, author_id=author_id, skip=skip, limit=limit)
 
 
@@ -88,5 +91,5 @@ def read_books(
 def create_new_book(
         book: BookCreate,
         db: Session = Depends(get_db),
-):
+) -> Book:
     return create_book(db=db, book=book)

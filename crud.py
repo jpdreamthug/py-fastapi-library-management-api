@@ -8,7 +8,7 @@ def get_all_authors(
     db: Session,
     skip: int = 0,
     limit: int = 10,
-):
+) -> list[DBAuthor]:
     return (db.query(DBAuthor)
             .options(joinedload(DBAuthor.books))
             .offset(skip)
@@ -16,7 +16,7 @@ def get_all_authors(
             .all())
 
 
-def create_author(db: Session, author: AuthorCreate):
+def create_author(db: Session, author: AuthorCreate) -> DBAuthor:
     db_author = DBAuthor(
         name=author.name,
         bio=author.bio,
@@ -27,13 +27,13 @@ def create_author(db: Session, author: AuthorCreate):
     return db_author
 
 
-def get_author_by_name(db: Session, name: str):
+def get_author_by_name(db: Session, name: str) -> DBAuthor:
     return (
         db.query(DBAuthor).filter(DBAuthor.name == name).first()
     )
 
 
-def get_author(db: Session, author_id: int):
+def get_author(db: Session, author_id: int) -> DBAuthor:
     return db.query(DBAuthor).filter(DBAuthor.id == author_id).first()
 
 
@@ -42,7 +42,7 @@ def get_all_books(
         skip: int = 0,
         limit: int = 10,
         author_id: int = None
-):
+) -> list[DBBook]:
     queryset = db.query(DBBook).options(joinedload(DBBook.author))
 
     if author_id is not None:
@@ -53,7 +53,7 @@ def get_all_books(
     return queryset.offset(skip).limit(limit).all()
 
 
-def create_book(db: Session, book: BookCreate):
+def create_book(db: Session, book: BookCreate) -> DBBook:
     db_book = DBBook(
         title=book.title,
         summary=book.summary,
