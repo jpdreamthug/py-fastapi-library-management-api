@@ -1,40 +1,47 @@
+from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
-from models import DBBook, DBAuthor
-from schemas import AuthorCreate, BookCreate
+import models
+import schemas
 
 
 def get_all_authors(
     db: Session,
     skip: int = 0,
     limit: int = 10,
-) -> list[DBAuthor]:
-    return (db.query(DBAuthor)
-            .options(joinedload(DBAuthor.books))
+) -> list[models.Author]:
+    return (db.query(models.Author)
             .offset(skip)
             .limit(limit)
             .all())
 
 
-def create_author(db: Session, author: AuthorCreate) -> DBAuthor:
-    db_author = DBAuthor(
+def create_author(db: Session, author: schemas.AuthorCreate) -> models.Author:
+    db_author = models.Author(
         name=author.name,
         bio=author.bio,
     )
     db.add(db_author)
-    db.commit()
-    db.refresh(db_author)
+    try:
+        db.commit()
+        db.refresh(db_author)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400, detail="Author with this name already exists"
+        )
     return db_author
 
 
-def get_author_by_name(db: Session, name: str) -> DBAuthor:
+def get_author_by_name(db: Session, name: str) -> models.Author:
     return (
-        db.query(DBAuthor).filter(DBAuthor.name == name).first()
+        db.query(models.Author).filter(models.Author.name == name).first()
     )
 
 
-def get_author(db: Session, author_id: int) -> DBAuthor:
-    return db.query(DBAuthor).filter(DBAuthor.id == author_id).first()
+def get_author(db: Session, author_id: int) -> models.Author:
+    return db.query(models.Author).filter(models.Author.id == author_id).first()
 
 
 def get_all_books(
@@ -42,25 +49,31 @@ def get_all_books(
         skip: int = 0,
         limit: int = 10,
         author_id: int = None
-) -> list[DBBook]:
-    queryset = db.query(DBBook).options(joinedload(DBBook.author))
+) -> list[models.Book]:
+    queryset = db.query(models.Book).options(joinedload(models.Book.author))
 
     if author_id is not None:
         queryset = queryset.filter(
-            DBBook.author_id == author_id
+            models.Book.author_id == author_id
         )
 
     return queryset.offset(skip).limit(limit).all()
 
 
-def create_book(db: Session, book: BookCreate) -> DBBook:
-    db_book = DBBook(
+def create_book(db: Session, book: schemas.BookCreate) -> models.Book:
+    db_book = models.Book(
         title=book.title,
         summary=book.summary,
         publication_date=book.publication_date,
         author_id=book.author_id,
     )
     db.add(db_book)
-    db.commit()
-    db.refresh(db_book)
+    try:
+        db.commit()
+        db.refresh(db_book)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400, detail="Error when adding new book into DB"
+        )
     return db_book
